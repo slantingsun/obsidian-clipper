@@ -9,7 +9,6 @@ import { createDefaultTemplate, getTemplates, saveTemplateSettings } from '../ma
 import { updateTemplateList, showTemplateEditor } from '../managers/template-ui';
 import { exportAllSettings, importAllSettings } from '../utils/import-export';
 import { Template } from '../types/types';
-import { exportHighlights } from './highlights-manager';
 import { getMessage, setupLanguageAndDirection } from '../utils/i18n';
 import { debounce } from '../utils/debounce';
 import browser from '../utils/browser-polyfill';
@@ -404,10 +403,26 @@ function initializeExportImportAllSettingsButtons(): void {
 	}
 }
 
+import { exportHighlights, importHighlights } from './highlights-manager';
+import { showImportModal } from '../utils/import-modal';
+
 function initializeExportHighlightsButton(): void {
 	const exportHighlightsBtn = document.getElementById('export-highlights');
 	if (exportHighlightsBtn) {
 		exportHighlightsBtn.addEventListener('click', exportHighlights);
+	}
+
+	const importHighlightsBtn = document.getElementById('import-highlights');
+	if (importHighlightsBtn) {
+		importHighlightsBtn.addEventListener('click', () => {
+			showImportModal(
+				'import-modal',
+				importHighlights,
+				'.json',
+				false,
+				'importHighlights'
+			);
+		});
 	}
 }
 

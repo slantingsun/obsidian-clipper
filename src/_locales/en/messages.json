@@ -370,6 +370,9 @@
 	"importFailed": {
 		"message": "Import failed. Please check the console for more details."
 	},
+	"importHighlights": {
+		"message": "Import highlights"
+	},
 	"importModalTitle": {
 		"message": "Import"
 	},
@@ -395,6 +398,9 @@
 	},
 	"importSettings": {
 		"message": "Import settings"
+	},
+	"importSuccess": {
+		"message": "Successfully imported highlights"
 	},
 	"importTemplate": {
 		"message": "Import template"

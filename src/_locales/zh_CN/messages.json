@@ -370,6 +370,9 @@
 	"importFailed": {
 		"message": "导入失败。请检查控制台以获取更多详细信息。"
 	},
+	"importHighlights": {
+		"message": "导入高亮"
+	},
 	"importModalTitle": {
 		"message": "导入"
 	},
@@ -395,6 +398,9 @@
 	},
 	"importSettings": {
 		"message": "导入设置"
+	},
+	"importSuccess": {
+		"message": "成功导入高亮"
 	},
 	"importTemplate": {
 		"message": "导入模板"

@@ -17,6 +17,8 @@ import { getClipHistory } from '../utils/storage-utils';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { showModal, hideModal } from '../utils/modal-utils';
+import { WebDavManager } from './webdav-manager';
+import { getHighlightsJson, importHighlights, exportHighlights } from './highlights-manager';
 
 dayjs.extend(weekOfYear);
 
@@ -223,7 +225,7 @@ export function initializeGeneralSettings(): void {
 		initializeAutoSave();
 		initializeResetDefaultTemplateButton();
 		initializeExportImportAllSettingsButtons();
-		initializeHighlighterSettings();
+		await initializeHighlighterSettings();
 		initializeExportHighlightsButton();
 		initializeSaveBehaviorDropdown();
 		await initializeUsageChart();
@@ -403,7 +405,6 @@ function initializeExportImportAllSettingsButtons(): void {
 	}
 }
 
-import { exportHighlights, importHighlights } from './highlights-manager';
 import { showImportModal } from '../utils/import-modal';
 
 function initializeExportHighlightsButton(): void {
@@ -426,7 +427,7 @@ function initializeExportHighlightsButton(): void {
 	}
 }
 
-function initializeHighlighterSettings(): void {
+async function initializeHighlighterSettings(): Promise<void> {
 	initializeSettingToggle('highlighter-toggle', generalSettings.highlighterEnabled, (checked) => {
 		saveSettings({ ...generalSettings, highlighterEnabled: checked });
 	});
@@ -441,6 +442,75 @@ function initializeHighlighterSettings(): void {
 		highlightBehaviorSelect.addEventListener('change', () => {
 			saveSettings({ ...generalSettings, highlightBehavior: highlightBehaviorSelect.value });
 		});
+	}
+
+	const webdavUrlInput = document.getElementById('webdav-url') as HTMLInputElement;
+	const webdavUsernameInput = document.getElementById('webdav-username') as HTMLInputElement;
+	const webdavPasswordInput = document.getElementById('webdav-password') as HTMLInputElement;
+	const webdavTestBtn = document.getElementById('webdav-test');
+	const webdavUploadBtn = document.getElementById('webdav-upload');
+	const webdavDownloadBtn = document.getElementById('webdav-download');
+	const webdavStatus = document.getElementById('webdav-status');
+
+	if (webdavUrlInput && webdavUsernameInput && webdavPasswordInput) {
+		const stored: any = await browser.storage.local.get(['webdavUrl', 'webdavUsername', 'webdavPassword']);
+		webdavUrlInput.value = (stored.webdavUrl as string) || '';
+		webdavUsernameInput.value = (stored.webdavUsername as string) || '';
+		webdavPasswordInput.value = (stored.webdavPassword as string) || '';
+
+		const saveWebDavSettings = debounce(() => {
+			browser.storage.local.set({
+				webdavUrl: webdavUrlInput.value,
+				webdavUsername: webdavUsernameInput.value,
+				webdavPassword: webdavPasswordInput.value
+			});
+		}, 500);
+
+		webdavUrlInput.addEventListener('input', saveWebDavSettings);
+		webdavUsernameInput.addEventListener('input', saveWebDavSettings);
+		webdavPasswordInput.addEventListener('input', saveWebDavSettings);
+
+		const getManager = () => new WebDavManager(webdavUrlInput.value, webdavUsernameInput.value, webdavPasswordInput.value);
+		const setStatus = (msg: string, isError = false) => {
+			if (webdavStatus) {
+				webdavStatus.textContent = msg;
+				webdavStatus.style.color = isError ? 'var(--text-error)' : 'var(--text-muted)';
+			}
+		};
+
+		if (webdavTestBtn) {
+			webdavTestBtn.addEventListener('click', async () => {
+				setStatus('Testing...');
+				const result = await getManager().testConnection();
+				setStatus(result.success ? 'Connection successful' : 'Connection failed: ' + result.message, !result.success);
+			});
+		}
+
+		if (webdavUploadBtn) {
+			webdavUploadBtn.addEventListener('click', async () => {
+				setStatus('Uploading...');
+				try {
+					const json = await getHighlightsJson();
+					await getManager().upload('highlights.json', json);
+					setStatus('Upload successful');
+				} catch (e) {
+					setStatus('Upload failed: ' + String(e), true);
+				}
+			});
+		}
+
+		if (webdavDownloadBtn) {
+			webdavDownloadBtn.addEventListener('click', async () => {
+				setStatus('Downloading...');
+				try {
+					const json = await getManager().download('highlights.json');
+					await importHighlights(json);
+					setStatus('Download and import successful');
+				} catch (e) {
+					setStatus('Download failed: ' + String(e), true);
+				}
+			});
+		}
 	}
 }
 

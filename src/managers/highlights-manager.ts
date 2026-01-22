@@ -4,17 +4,21 @@ import { AnyHighlightData } from '../utils/highlighter';
 import dayjs from 'dayjs';
 import { getMessage } from '../utils/i18n';
 
+export async function getHighlightsJson(): Promise<string> {
+	const result = await browser.storage.local.get('highlights');
+	const allHighlights = result.highlights || {};
+
+	const exportData = Object.entries(allHighlights).map(([url, data]) => ({
+		url,
+		highlights: (data as any).highlights as AnyHighlightData[]
+	}));
+
+	return JSON.stringify(exportData, null, 2);
+}
+
 export async function exportHighlights(): Promise<void> {
 	try {
-		const result = await browser.storage.local.get('highlights');
-		const allHighlights = result.highlights || {};
-
-		const exportData = Object.entries(allHighlights).map(([url, data]) => ({
-			url,
-			highlights: data.highlights as AnyHighlightData[]
-		}));
-
-		const jsonContent = JSON.stringify(exportData, null, 2);
+		const jsonContent = await getHighlightsJson();
 		const blob = new Blob([jsonContent], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
 
